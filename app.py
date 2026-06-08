@@ -18,17 +18,17 @@ def get_knowledge_files():
 st.sidebar.title("📌 Menu Quản Trị")
 menu = st.sidebar.radio(
     "Chọn phân khu:",
-    ["1. Công cụ tạo kế hoạch nội dung", "2. Tạo nội dung cụ thể", "3. Thông tin kỳ thi VACT"]
+    ["1. Lên ý tưởng nội dung", "2. Tạo nội dung cụ thể", "3. Thông tin kỳ thi VACT"]
 )
 
-st.sidebar.divider()
-st.sidebar.subheader("💰 Chi phí Token (Tạm tính)")
-total_usd = st.session_state.get('total_usd', 0.0)
-total_vnd = st.session_state.get('total_vnd', 0)
-st.sidebar.info(f"Phiên hiện tại: ${total_usd:.4f}\n\nQuy đổi: {int(total_vnd):,} VNĐ")
+# st.sidebar.divider()
+# st.sidebar.subheader("💰 Chi phí Token (Tạm tính)")
+# total_usd = st.session_state.get('total_usd', 0.0)
+# total_vnd = st.session_state.get('total_vnd', 0)
+# st.sidebar.info(f"Phiên hiện tại: ${total_usd:.4f}\n\nQuy đổi: {int(total_vnd):,} VNĐ")
 
-if menu == "1. Công cụ tạo kế hoạch nội dung":
-    st.title("📅 Công cụ tạo kế hoạch nội dung")
+if menu == "1. Lên ý tưởng nội dung":
+    st.title("📅 Lên ý tưởng nội dung")
     st.markdown("Xây dựng lộ trình bài viết chuẩn tỷ lệ 80% học thuật - 20% thương hiệu dành cho lứa 2k9.")
     with st.form("plan_form"):
         col1, col2 = st.columns(2)
