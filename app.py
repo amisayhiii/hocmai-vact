@@ -30,6 +30,22 @@ def get_knowledge_files():
         return [f for f in os.listdir(knowledge_dir) if os.path.isfile(os.path.join(knowledge_dir, f))]
     return []
 
+def build_knowledge_context(selected_files):
+    if not selected_files:
+        return ""
+    context = "--- TÀI LIỆU THAM KHẢO ---\n"
+    for f in selected_files:
+        path = os.path.join("knowledge", f)
+        try:
+            with open(path, 'r', encoding='utf-8') as file:
+                # Giới hạn đọc 50000 ký tự mỗi file để tiết kiệm token
+                context += f"Tài liệu [{f}]:\n{file.read()[:50000]}\n\n"
+        except Exception:
+            pass
+    context += "---------------------------\n\n"
+    return context
+
+
 st.sidebar.title("📌 Menu Quản Trị")
 menu = st.sidebar.radio(
     "Chọn phân khu:",
@@ -51,13 +67,18 @@ if menu == "1. Lên ý tưởng nội dung":
             timeframe = st.text_input("Khoảng thời gian (VD: Tuần 1 tháng 6/2026)")
         with col2:
             target_audience = st.text_input("Mục tiêu trọng tâm (VD: Khởi động Lộ trình S)")
+        
+        knowledge_list = get_knowledge_files()
+        selected_knowledge = st.multiselect("📚 Trích xuất từ tài liệu", knowledge_list, default=knowledge_list[:2] if len(knowledge_list) >= 2 else knowledge_list)
+        
         submit_plan = st.form_submit_button("Phân tích & Lên kế hoạch")
     if submit_plan:
         if not timeframe or not target_audience:
             st.warning("Vui lòng nhập đủ Khoảng thời gian và Mục tiêu trọng tâm!")
         else:
             with st.spinner("Đang phân tích dữ liệu kho tài liệu và khởi tạo ma trận lịch trình nội dung..."):
-                prompt = f"Lập kế hoạch nội dung truyền thông cho kỳ thi VACT. Thời gian: {timeframe}. Mục tiêu: {target_audience}. Yêu cầu: Tỷ lệ 80% học thuật - 20% thương hiệu dành cho lứa 2k9."
+                context = build_knowledge_context(selected_knowledge)
+                prompt = f"{context}Dựa vào tài liệu tham khảo trên (nếu có), hãy lập kế hoạch nội dung truyền thông thật CHUYÊN SÂU cho kỳ thi VACT. \nYêu cầu BẮT BUỘC: Phân tích và trích dẫn số liệu, chi tiết từ tài liệu để kế hoạch có chiều sâu thực tế. \nThời gian: {timeframe}. \nMục tiêu: {target_audience}. \nYêu cầu: Tỷ lệ 80% học thuật - 20% thương hiệu dành cho lứa 2k9."
                 st.session_state['plan_result'] = generate_gemini_content(prompt)
                 
     if 'plan_result' in st.session_state:
@@ -89,6 +110,9 @@ elif menu == "2. Tạo nội dung cụ thể":
             
         other_req = st.text_area("5. Yêu cầu khác", placeholder="Tone, mood, hoặc dán một đoạn văn mẫu để AI bắt chước văn phong...")
         
+        knowledge_list = get_knowledge_files()
+        selected_knowledge = st.multiselect("📚 Nguồn tri thức (bắt buộc AI trích xuất)", knowledge_list)
+        
         st.caption("Ràng buộc hệ thống: Hook sắc bén, 80% học thuật - 20% thương hiệu, Đã qua kiểm duyệt Logic.")
         
         generate_btn = st.button("TẠO NỘI DUNG", type="primary", use_container_width=True)
@@ -102,7 +126,8 @@ elif menu == "2. Tạo nội dung cụ thể":
         if generate_btn:
             if topic:
                 with st.spinner("Đang phân tích logic và khởi tạo bản thảo qua Gemini..."):
-                    prompt = f"Hãy viết một nội dung truyền thông với các tiêu chí sau:\n1. Chủ đề: {topic}\n2. Người phát ngôn: {speaker}\n3. Đối tượng hướng đến: {audience}\n4. Định dạng: {format_type}\n5. Yêu cầu khác: {other_req}\n\nRàng buộc: Hook sắc bén, 80% học thuật - 20% thương hiệu."
+                    context = build_knowledge_context(selected_knowledge)
+                    prompt = f"{context}Dựa vào bối cảnh tài liệu trên, hãy viết một nội dung truyền thông CHUYÊN SÂU với các tiêu chí sau:\n1. Chủ đề: {topic}\n2. Người phát ngôn: {speaker}\n3. Đối tượng hướng đến: {audience}\n4. Định dạng: {format_type}\n5. Yêu cầu khác: {other_req}\n\nYêu cầu BẮT BUỘC: Lấy chi tiết, ví dụ thực tế hoặc trích dẫn trực tiếp từ kho tài liệu để đưa vào bài viết nhằm tăng tính học thuật và giá trị chia sẻ.\nRàng buộc: Hook sắc bén, 80% học thuật - 20% thương hiệu."
                     st.session_state['content_result'] = generate_gemini_content(prompt)
             else:
                 st.warning("Vui lòng nhập Chủ đề để hệ thống có cơ sở xử lý.")
@@ -111,7 +136,8 @@ elif menu == "2. Tạo nội dung cụ thể":
             with header_col2:
                 if st.button("TẠO LẠI", use_container_width=True):
                     with st.spinner("Đang tạo lại bản thảo..."):
-                        prompt = f"Hãy viết một nội dung truyền thông với các tiêu chí sau:\n1. Chủ đề: {topic}\n2. Người phát ngôn: {speaker}\n3. Đối tượng hướng đến: {audience}\n4. Định dạng: {format_type}\n5. Yêu cầu khác: {other_req}\n\nRàng buộc: Hook sắc bén, 80% học thuật - 20% thương hiệu."
+                        context = build_knowledge_context(selected_knowledge)
+                        prompt = f"{context}Dựa vào bối cảnh tài liệu trên, hãy viết một nội dung truyền thông CHUYÊN SÂU với các tiêu chí sau:\n1. Chủ đề: {topic}\n2. Người phát ngôn: {speaker}\n3. Đối tượng hướng đến: {audience}\n4. Định dạng: {format_type}\n5. Yêu cầu khác: {other_req}\n\nYêu cầu BẮT BUỘC: Lấy chi tiết, ví dụ thực tế hoặc trích dẫn trực tiếp từ kho tài liệu để đưa vào bài viết nhằm tăng tính học thuật và giá trị chia sẻ.\nRàng buộc: Hook sắc bén, 80% học thuật - 20% thương hiệu."
                         st.session_state['content_result'] = generate_gemini_content(prompt)
                         st.rerun()
             with header_col3:
