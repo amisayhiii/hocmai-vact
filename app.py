@@ -12,11 +12,17 @@ st.set_page_config(page_title="HOCMAI VACT Content Assistant", page_icon="📝",
 
 def generate_gemini_content(prompt):
     try:
-        model = genai.GenerativeModel("gemini-pro")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"Lỗi khi gọi API: {str(e)}"
+        error_msg = f"Lỗi khi gọi API: {str(e)}"
+        try:
+            available_models = [m.name for m in genai.list_models()]
+            error_msg += f"\n\n--- DANH SÁCH MODEL KHẢ DỤNG CHO API KEY NÀY ---\n" + "\n".join(available_models)
+        except Exception as list_e:
+            error_msg += f"\n(Không thể lấy danh sách model: {str(list_e)})"
+        return error_msg
 
 def get_knowledge_files():
     knowledge_dir = "knowledge"
