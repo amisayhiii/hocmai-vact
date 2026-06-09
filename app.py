@@ -12,7 +12,7 @@ st.set_page_config(page_title="HOCMAI VACT Content Assistant", page_icon="📝",
 
 def generate_gemini_content(prompt):
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash-latest")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
