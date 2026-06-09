@@ -52,9 +52,11 @@ if menu == "1. Lên ý tưởng nội dung":
         else:
             with st.spinner("Đang phân tích dữ liệu kho tài liệu và khởi tạo ma trận lịch trình nội dung..."):
                 prompt = f"Lập kế hoạch nội dung truyền thông cho kỳ thi VACT. Thời gian: {timeframe}. Mục tiêu: {target_audience}. Yêu cầu: Tỷ lệ 80% học thuật - 20% thương hiệu dành cho lứa 2k9."
-                result = generate_gemini_content(prompt)
-                st.markdown("### Kết quả kế hoạch:")
-                st.write(result)
+                st.session_state['plan_result'] = generate_gemini_content(prompt)
+                
+    if 'plan_result' in st.session_state:
+        st.markdown("### Kết quả kế hoạch:")
+        st.write(st.session_state['plan_result'])
 
 elif menu == "2. Tạo nội dung cụ thể":
     st.title("✍️ Tạo nội dung cụ thể")
@@ -93,17 +95,25 @@ elif menu == "2. Tạo nội dung cụ thể":
             
         if generate_btn:
             if topic:
-                with header_col2:
-                    st.button("TẠO LẠI", use_container_width=True)
-                with header_col3:
-                    st.button("COPY", use_container_width=True)
-                    
                 with st.spinner("Đang phân tích logic và khởi tạo bản thảo qua Gemini..."):
                     prompt = f"Hãy viết một nội dung truyền thông với các tiêu chí sau:\n1. Chủ đề: {topic}\n2. Người phát ngôn: {speaker}\n3. Đối tượng hướng đến: {audience}\n4. Định dạng: {format_type}\n5. Yêu cầu khác: {other_req}\n\nRàng buộc: Hook sắc bén, 80% học thuật - 20% thương hiệu."
-                    result_text = generate_gemini_content(prompt)
-                    st.text_area("Kết quả:", value=result_text, height=380, label_visibility="collapsed")
+                    st.session_state['content_result'] = generate_gemini_content(prompt)
             else:
                 st.warning("Vui lòng nhập Chủ đề để hệ thống có cơ sở xử lý.")
+                
+        if 'content_result' in st.session_state:
+            with header_col2:
+                if st.button("TẠO LẠI", use_container_width=True):
+                    with st.spinner("Đang tạo lại bản thảo..."):
+                        prompt = f"Hãy viết một nội dung truyền thông với các tiêu chí sau:\n1. Chủ đề: {topic}\n2. Người phát ngôn: {speaker}\n3. Đối tượng hướng đến: {audience}\n4. Định dạng: {format_type}\n5. Yêu cầu khác: {other_req}\n\nRàng buộc: Hook sắc bén, 80% học thuật - 20% thương hiệu."
+                        st.session_state['content_result'] = generate_gemini_content(prompt)
+                        st.rerun()
+            with header_col3:
+                # Copy button is mainly visual in Streamlit without custom components, 
+                # but users can copy from the text_area
+                st.button("COPY", use_container_width=True)
+                
+            st.text_area("Kết quả:", value=st.session_state['content_result'], height=380, label_visibility="collapsed")
         else:
             st.info("Bản thảo hoàn thiện sẽ hiển thị tại đây sau khi bạn bấm TẠO NỘI DUNG.")
 
