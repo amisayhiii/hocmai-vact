@@ -9,6 +9,15 @@ if 'GEMINI_API_KEY' in st.secrets:
 
 st.set_page_config(page_title="HOCMAI VACT Content Assistant", page_icon="📝", layout="wide")
 
+
+def generate_gemini_content(prompt):
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Lỗi khi gọi API: {str(e)}"
+
 def get_knowledge_files():
     knowledge_dir = "knowledge"
     if os.path.exists(knowledge_dir):
@@ -38,7 +47,14 @@ if menu == "1. Lên ý tưởng nội dung":
             target_audience = st.text_input("Mục tiêu trọng tâm (VD: Khởi động Lộ trình S)")
         submit_plan = st.form_submit_button("Phân tích & Lên kế hoạch")
     if submit_plan:
-        st.success("Đang phân tích dữ liệu kho tài liệu và khởi tạo ma trận lịch trình nội dung...")
+        if not timeframe or not target_audience:
+            st.warning("Vui lòng nhập đủ Khoảng thời gian và Mục tiêu trọng tâm!")
+        else:
+            with st.spinner("Đang phân tích dữ liệu kho tài liệu và khởi tạo ma trận lịch trình nội dung..."):
+                prompt = f"Lập kế hoạch nội dung truyền thông cho kỳ thi VACT. Thời gian: {timeframe}. Mục tiêu: {target_audience}. Yêu cầu: Tỷ lệ 80% học thuật - 20% thương hiệu dành cho lứa 2k9."
+                result = generate_gemini_content(prompt)
+                st.markdown("### Kết quả kế hoạch:")
+                st.write(result)
 
 elif menu == "2. Tạo nội dung cụ thể":
     st.title("✍️ Tạo nội dung cụ thể")
@@ -65,7 +81,7 @@ elif menu == "2. Tạo nội dung cụ thể":
             
         other_req = st.text_area("5. Yêu cầu khác", placeholder="Tone, mood, hoặc dán một đoạn văn mẫu để AI bắt chước văn phong...")
         
-        st.caption("Ràng buộc hệ thống: Hook sắc bén, 80% học thuật - 20% thương hiệu, Văn xuôi (không gạch đầu dòng), Đã qua kiểm duyệt Logic.")
+        st.caption("Ràng buộc hệ thống: Hook sắc bén, 80% học thuật - 20% thương hiệu, Đã qua kiểm duyệt Logic.")
         
         generate_btn = st.button("TẠO NỘI DUNG", type="primary", use_container_width=True)
 
@@ -82,8 +98,9 @@ elif menu == "2. Tạo nội dung cụ thể":
                 with header_col3:
                     st.button("COPY", use_container_width=True)
                     
-                with st.spinner("Đang phân tích logic và khởi tạo bản thảo..."):
-                    result_text = "Đây là khu vực hiển thị bản thảo sau khi hệ thống đã hoàn tất việc trích xuất ý tưởng và tự động rà soát chéo về ngữ pháp cũng như logic. Nội dung tại đây đảm bảo bám sát các tiêu chí khắt khe của chiến dịch Lộ trình S, duy trì cấu trúc văn xuôi liền mạch hoàn toàn không sử dụng định dạng gạch đầu dòng."
+                with st.spinner("Đang phân tích logic và khởi tạo bản thảo qua Gemini..."):
+                    prompt = f"Hãy viết một nội dung truyền thông với các tiêu chí sau:\n1. Chủ đề: {topic}\n2. Người phát ngôn: {speaker}\n3. Đối tượng hướng đến: {audience}\n4. Định dạng: {format_type}\n5. Yêu cầu khác: {other_req}\n\nRàng buộc: Hook sắc bén, 80% học thuật - 20% thương hiệu."
+                    result_text = generate_gemini_content(prompt)
                     st.text_area("Kết quả:", value=result_text, height=380, label_visibility="collapsed")
             else:
                 st.warning("Vui lòng nhập Chủ đề để hệ thống có cơ sở xử lý.")
