@@ -230,3 +230,49 @@ elif menu == "3. Thông tin kỳ thi VACT":
         **Q: Điểm bài thi được tính như thế nào?**  
         A: Không phải mỗi câu đều có điểm bằng nhau (ví dụ 10 điểm/câu). Điểm được tính theo thuật toán IRT, câu hỏi khó có ít người làm được sẽ có trọng số điểm cao hơn câu dễ.
         """)
+        
+    st.markdown("---")
+    st.markdown("### 🔍 Tra cứu Điểm chuẩn ĐGNL HCM năm 2025")
+    st.markdown("Hệ thống hỗ trợ tra cứu điểm chuẩn của **2,446 ngành học** từ **90 trường Đại học, Học viện** xét tuyển bằng điểm thi ĐGNL HCM năm 2025.")
+    
+    csv_file = "diem_chuan_dgnl_hcm_2025.csv"
+    if os.path.exists(csv_file):
+        import pandas as pd
+        try:
+            df = pd.read_csv(csv_file)
+            
+            # Cột lọc dữ liệu
+            col_f1, col_f2 = st.columns([2, 1])
+            with col_f1:
+                search_query = st.text_input("🔍 Tìm kiếm theo tên trường, mã ngành hoặc tên ngành:", placeholder="Nhập từ khóa tìm kiếm (VD: Bách Khoa, Khoa học Máy tính, 748...)...")
+            with col_f2:
+                schools = sorted(df['Trường'].unique().tolist())
+                selected_school = st.selectbox("🏫 Chọn trường cụ thể:", ["Tất cả các trường"] + schools)
+                
+            # Tiến hành lọc
+            filtered_df = df.copy()
+            if selected_school != "Tất cả các trường":
+                filtered_df = filtered_df[filtered_df['Trường'] == selected_school]
+                
+            if search_query:
+                # Bộ lọc an toàn tránh cảnh báo kiểu dữ liệu của Pyright
+                q = search_query.lower()
+                mask = [
+                    (q in str(tr).lower() or 
+                     q in str(ng).lower() or 
+                     q in str(ma).lower())
+                    for tr, ng, ma in zip(filtered_df['Trường'], filtered_df['Tên ngành'], filtered_df['Mã ngành'])
+                ]
+                filtered_df = filtered_df[mask]
+                
+            # Đổi tên cột hiển thị cho đẹp mắt
+            display_df = filtered_df.copy()
+            
+            st.caption(f"Tìm thấy **{len(filtered_df)}** kết quả phù hợp.")
+            st.dataframe(display_df, use_container_width=True, hide_index=True)
+            
+        except Exception as e:
+            st.error(f"Lỗi khi tải cơ sở dữ liệu: {e}")
+    else:
+        st.warning("Không tìm thấy tệp dữ liệu điểm chuẩn diem_chuan_dgnl_hcm_2025.csv!")
+
